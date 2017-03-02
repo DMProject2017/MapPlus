@@ -5,6 +5,7 @@ from django.db import connection, models
 import json
 import urllib2
 import sys
+import time
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -28,6 +29,11 @@ def getmsg(request):
     # print weather info
     print "城市："+weatherInfo['city']
     print "天气："+weatherInfo['weather']
+
+    #get time
+    h_str=time.strftime("%H", time.localtime(time.time()))
+    h_chn=int(h_str)
+    print h_chn
 
     res={}
     res['msg']="hehehe"
