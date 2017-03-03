@@ -2,6 +2,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.db import connection, models
+from django.views.decorators.csrf import csrf_exempt
 import json
 import urllib2
 import sys
@@ -14,8 +15,12 @@ sys.setdefaultencoding('utf-8')
 def index(request):
     return HttpResponse("<h2>Hello World!</h2>A Server for a Feng Ru Cup Project.<br><br><footer><center>College of Software, Beihang University</center></footer>")
 
+@csrf_exempt
 def getmsg(request):
     # get json
+    if(request.method=='POST'):
+        print "POST Method"
+        # json.loads(request.body)
     xpos = 39.983836
     ypos = 116.352276
     addr = "中国北京市海淀区知春路29号1"
@@ -48,6 +53,7 @@ def getmsg(request):
     #time 2017-03-03 12:37:00
     res['time']=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     res['weather']=weatherInfo['weather']
+    res['temp']=weatherInfo2['temp']
     res['temp1']=weatherInfo['temp1']
     res['temp2'] = weatherInfo['temp2']
     res['humid'] = weatherInfo2['SD']
