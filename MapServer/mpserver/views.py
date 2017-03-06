@@ -7,6 +7,8 @@ import json
 import urllib2
 import sys
 import time
+from .models import *
+from django.db.models import Q
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -18,14 +20,33 @@ def index(request):
 @csrf_exempt
 def getmsg(request):
     # get json
-    if(request.method=='POST'):
-        print "POST Method"
-        # json.loads(request.body)
-    xpos = 39.983836
-    ypos = 116.352276
     addr = "中国北京市海淀区知春路29号1"
-    # get city
+    xpos=200
+    ypos=200
+    if request.method=='POST':
+        print "POST Method"
+        reqans = request.POST
+        print reqans
+        xpos = request.REQUEST.get('longitude', 200)
+        ypos = request.POST.get('latitude', 200)
+    if xpos == 200 or ypos == 200:
+        res2 = {}
+        res2['status'] = "false"
+        res2['time'] = ""
+        res2['weather'] = ""
+        res2['temp'] = ""
+        res2['temp1'] = ""
+        res2['temp2'] = ""
+        res2['humid'] = ""
+        res2['WD'] = ""
+        res2['WSE'] = ""
+        res2['kind'] = "0"
+        res2['content'] = ""
+        ans2 = json.dumps(res2, ensure_ascii=False)
+        return HttpResponse(ans2)
+    # get city to be continued
     city = "海淀"
+    #cope with string of city and select citycode
     cursor = connection.cursor()
     cursor.execute("select CityCode from cityweather WHERE CityName = %s", [city])
     row = cursor.fetchone()
@@ -38,15 +59,23 @@ def getmsg(request):
     weatherHtml2 = urllib2.urlopen(city_url2).read()
     weatherJSON2 = json.JSONDecoder().decode(weatherHtml2)
     weatherInfo2 = weatherJSON2['weatherinfo']
-
-    # print weather info
-    print "城市："+weatherInfo['city']
-    print "天气："+weatherInfo['weather']
-
     #get time
     h_str=time.strftime("%H", time.localtime(time.time()))
     h_chn=int(h_str)
     print h_chn
+
+    MS = Noticepoint.objects.filter(
+        Q(fromxp__lte=xpos, fromyp__gte = ypos, targetxp__gte = xpos, targetyp__lte = ypos) |
+        Q(fromxp__gte=xpos, fromyp__gte = ypos, targetxp__lte = xpos, targetyp__lte = ypos) |
+        Q(fromxp__gte=xpos, fromyp__lte = ypos, targetxp__lte = xpos, targetyp__gte = ypos) |
+        Q(fromxp__lte=xpos, fromyp__lte = ypos, targetxp__gte = xpos, targetyp__gte = ypos))
+
+    if MS.count() == 0:
+        kind=0
+        content=""
+    else:
+        kind=MS[0].type
+        content=MS[0].content
 
     res={}
     res['status']="true"
@@ -59,7 +88,7 @@ def getmsg(request):
     res['humid'] = weatherInfo2['SD']
     res['WD']=weatherInfo2['WD']
     res['WSE']=weatherInfo2['WSE']
-    res['kind']="0"
-    res['content']="hh"
+    res['kind']=kind
+    res['content']=content
     ans=json.dumps(res, ensure_ascii=False)
     return HttpResponse(ans)
